@@ -6,7 +6,7 @@ My name is Shauna and I am a fifth year Bioinformatics and Computational biology
 Email: Shauna.vronces@mail.utoronto.ca!
 
 Links to: 
-* Shauna Vronces' wiki(https://github.com/bcb420-2023/Shauna_Vronces/wiki)
+* [Shauna Vronces' wiki](https://github.com/bcb420-2023/Shauna_Vronces/wiki)
 
 * [Assignment 1]()
 
