@@ -1,0 +1,207 @@
+---
+title: "Assignment 3 - Dataset Pathway and Network Analysis"
+date: "2023-04-15"
+author: "Shauna Vronces"
+output: 
+  html_document:
+    toc: yes
+    fig_caption: yes
+  html_notebook:
+    toc: yes
+    fig_caption: yes
+---
+```{r include=FALSE}
+# Installing dependencies
+
+if(!requireNamespace("readr", quietly= TRUE))
+install.packages("readr")
+if(!requireNamespace("knitr", quietly= TRUE))
+install.packages("knitr")
+
+library(knitr)
+library(readr)
+```
+
+# Introduction and Assignment 2 Recap
+
+The dataset used is [GSE159717](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE159717). The authors performed RNA-seq of uninfected, SARS-CoV-2-infected, and Remdesivir treated ex vivo cultured human islets from two donors in order to investigate the effects infection had on human pancreatic endocrine and exocrine cells, as well as the ability of SARS-CoV-2 to replicate in these cells. The raw counts were cleaned and filtered. A thresholded over-representation analysis was conducted on top output hits for both SARS infected cells and Remdesivir treated cells. \
+
+In the thresholded analysis, 438 genes for SARS treated samples had a p-value of less than 0.5, and 197 genes for Rem treated samples had a p-value of less than 0.5. Neither had genes with a false discovery rate of less than 0.5. SARS treated samples had 198 upregulated genes, and 240 downregulated genes. Rem treated samples had 124 upregulated genes, and 73 downregulated genes.\
+
+
+
+```{r include=FALSE}
+# Preparing the rank lists for Non-threshold GSEA 
+
+# Load in output hit data from A2
+SARS_output_hits <- readRDS(file=file.path("data", "SARS_output_hits_gname.RData"))
+
+Rem_output_hits <- readRDS(file=file.path("data", "REM_output_hits_gname.RData"))
+
+# Compupte ranks
+SARS_output_hits[,"rank"] <- log(SARS_output_hits$PValue, base=10) *
+    sign(SARS_output_hits$logFC)
+
+Rem_output_hits[,"rank"] <- log(Rem_output_hits$PValue, base=10) *
+    sign(Rem_output_hits$logFC)
+
+# Sort by rank and build rank list with gene name and rank
+
+# SARS treated
+SARS_output_hits <- SARS_output_hits[order(SARS_output_hits$rank),]
+
+gene_name_SARS <- SARS_output_hits[1]
+rank_SARS <- SARS_output_hits[8]
+
+SARS_ranked <- c(gene_name_SARS, rank_SARS)
+SARS_ranked <- as.data.frame(SARS_ranked)
+
+write_csv(SARS_ranked, file = file.path("data", "SARS_ranked.csv"))
+
+# Rem treated
+Rem_output_hits <- Rem_output_hits[order(Rem_output_hits$rank),]
+
+gene_name_Rem = Rem_output_hits[1]
+rank_Rem = Rem_output_hits[8]
+
+Rem_ranked <- c(gene_name_Rem, rank_Rem)
+Rem_ranked <- as.data.frame(Rem_ranked)
+
+write_csv(Rem_ranked, file = file.path("data", "Rem_ranked.csv"))
+```
+
+# Non-Threshold Gene Set Enrichment Analysis
+
+Non-threshold gene analysis was performed using GSEAPreranked on GSEA 4.3.2. The Bader Lab April 2 2023 gene set was used, as this was the most recent gene set available for humans. The default number of permutations was used (1000) as this was the highest number of permutations my computer could handle that also provided suitable results. For example, I tried running 2000 permutations, however this took significantly more time with no signficant difference in results. No-Collapse option was used, because the data set already had all gene names mapped to their HGNC gene symbol. These parameters were used for both the Remdesivir and SARS ranked lists. \
+
+## SARS infected cells
+
+#### Upregulated 
+
+2858 gene sets out of 5486 were upregulated, and 2 gene sets had a FDR of less than 25%. 69 gene sets were significantly enriched at p-value < 1%, and 261 genes were signficantly enriched at p-value < 5%. \
+
+```{r echo=FALSE}
+include_graphics("data/top_geneset_SARS_na_pos.png")
+```
+
+*Figure 1 Enrichment plot: DIGESTIVE SYSTEM PROCESS%GOBP%GO:0022600 Profile of the Running ES Score & Positions of GeneSet Members on the Rank Ordered List*
+
+#### Downregulated
+
+2628 gene sets out of 5486 were downregulated, and 322 gene sets had a FDR of less than 25%. 271 gene sets were significantly enriched at p-value < 1%, and 437 genes were signficantly enriched at p-value < 5%. \
+
+```{r echo=FALSE}
+include_graphics("data/top_geneset_sars_na_neg.png")
+```
+
+*Figure 2 Enrichment plot: HALLMARK_INTERFERON_ALPHA_RESPONSE%MSIGDBHALLMARK%HALLMARK_INTERFERON_ALPHA_RESPONSE Profile of the Running ES Score & Positions of GeneSet Members on the Rank Ordered List*
+
+## Rem treated cells
+
+#### Upregulated 
+
+2942 gene sets out of 5486 were upregulated, and only 1 gene set had a FDR of less than 25%. 61 gene sets were significantly enriched at p-value < 1%, and 205 gene sets were significantly enriched at p-value < 5%. \
+
+```{r echo=FALSE}
+include_graphics("data/top_geneset_Rem_na_pos.png")
+```
+
+*Figure 3 Enrichment plot: NEGATIVE REGULATION OF DNA BINDING%GOBP%GO:0043392 Profile of the Running ES Score & Positions of GeneSet Members on the Rank Ordered List*
+
+#### Downregulated
+
+2544 gene sets out of 5486 were downregulated, no gene sets had a FDR of less than 25%. 15 gene sets were significantly enriched at p-value < 1%, and 97 gene sets were significantly enriched at p-value < 5%. \
+
+```{r echo=FALSE}
+include_graphics("data/top_geneset_Rem_na_neg.png")
+```
+
+*Figure 4 Enrichment plot: ACTIVATION OF ATR IN RESPONSE TO REPLICATION STRESS%REACTOME%R-HSA-176187.2 Profile of the Running ES Score & Positions of GeneSet Members on the Rank Ordered List*
+
+
+## Threshold vs Non-threshold analysis
+
+In the thresholded analysis, 438 genes for SARS treated samples had a p-value of less than 0.5, and 197 genes for Rem treated samples had a p-value of less than 0.5. Neither had genes with a false discovery rate of less than 0.5. SARS treated samples had 198 upregulated genes, and 240 downregulated genes. Rem treated samples had 124 upregulated genes, and 73 downregulated genes. \
+
+In the non-thresholded analysis, SARS infected samples had 261 upregulated genes significantly enriched at p-value < 5% with 2 genesets passing the FDR threshold of 25% and 437 downregulated genes significantly enriched at p-value < 5% with 322 genesets passing the FDR thresholf of 25%. Rem treated samples had 205 upregulated genes significantly enriched at p-value < 5% with 1 gene set passing the FDR threshold of 25% and 97 downregulated genes signficantly enriched at p-value < 5% with no gene sets passing the FDR threshold of 25%. \
+
+The non-thresholded analysis provided more genes with significant enirchment, both for genes that were upregulated and downredulated. Furthermore, the non-thresholded analysis also provided a significant amount of gene sets that passed the FDR threshold for SARS downregulated genes, whereas the thresholded analysis did not find any. \
+
+# Gene Set Enrichment Visualization
+
+## Annotation
+
+To annotate the above networks, the AutoAnnotate app was used in Cytoscape, and all default parameters were used. \
+
+```{r echo=FALSE}
+include_graphics("data/Enrichment Map Rem.png")
+```
+
+*Figure 5 Remdesivir treated cells enriched genes*
+
+An FDR q-value value of 0.5 was used for Remdesivir enrichment map. This is because very few genes passed the FDR threshold, so I increased it to 0.5 in order to see what pathways the enriched genes belonged to. The default edge cutoff q-value of 0.375 was used. \
+
+There are 35 nodes, and 23 edges. \
+
+```{r echo=FALSE}
+include_graphics("data/Enrichment Map SARS.png")
+```
+
+*Figure 6 SARS-CoV-2 infected cells enriched genes*
+
+The default FDR q-value cutoff of 0.1 was used for the SARS enrichment map. Since the SARS GSEA resulted in much more genes that passed the FDR cutoff, it made sense to use a more stringent value for the cutoff, compared to the values used in the Rem enrichment map. \
+
+There are 179 Nodes, and 1836 edges. \
+
+```{r echo=FALSE}
+include_graphics("data/remVSsars.png")
+```
+
+*Figure 7 Publication Ready Combined Enrichment Map for SARS-CoV-2 vs Remdesevir treated cells*
+
+An FDR q-value of 0.15 was used for the combined enrichment map. This was the value that allowed for meaningful visualization of the enriched genes and pathways for both treatments, while still using a stringent cutoff value. The default edge cutoff q-value of 0.375 was used. \
+
+There are 708 nodes, and 7523 edges. \
+
+```{r echo=FALSE}
+include_graphics("data/pub_ready.png")
+```
+
+*Figure 8 Publication Ready Enrichment Map for SARS-CoV-2 infected cells*
+
+This is the same enrichment map as Figure 2, with the modifications made to make it publication ready. The same parameters were used as the ones used in the map in Figure 2. \
+
+# Interpretation and Detailed View of Results
+
+The enrichment results do support the conclusions discussed in the original paper, which was that the human pancreas is a target for SARS-CoV-2, and as a result contributes to COVID-19 patients metabolic dysregulation and glucose homeostasis. As the main pathways/processes that are enriched are related to immune response, as well as some pathways that are related to signal cascades that are involved in metabolic regulation. For example, in Figure 7, one of the more enriched pathway/process is gli3 proteasome degradation which is downregulated in SARS infected cells, but relatively more upregulated in Rem treated cells. GLI3 transcription factors play a role in regulation of metabolism, as well as liver function (Schmidt-Heck et al., 2015), which could explain the effect SARS-CoV-2 has on cells ability to regulate glucose. Furthermore, we can see in Figure 8 that coupled electron transport and type cellular response are enriched pathways, the former being responsible for ATP production in cells, and the latter being an hallmark process in Type 1 diabetes (Roep et al., 1999). This further supports the original papers conclusions that cells infected with SARS-CoV-2 exibit metabolic dysregulation and inability to maintain glucose homeostasis. \
+
+# References 
+
+[1] BCB420 2022/23 Course Notes; by Ruth Isserlin \
+
+[2] Shannon P, Markiel A, Ozier O, Baliga NS, Wang JT, Ramage D, Amin N, Schwikowski B, Ideker T. Cytoscape: a software environment for integrated models of biomolecular interaction networks. Genome Research 2003 Nov; 13(11):2498-504 \
+
+[3] GEO Accession 159717. Gene Expression Omnibus at https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE159717 \
+
+[4] Müller JA, Groß R, Conzelmann C, Krüger J et al. SARS-CoV-2 infects and replicates in cells of the human endocrine and exocrine pancreas. Nat Metab 2021 Feb;3(2):149-165. PMID: 33536639 \
+
+[5] Wolfgang Schmidt-Heck, Madlen Matz-Soja, Susanne Aleithe, Eugenia Marbach, Reinhard Guthke, Rolf Gebhardt. Fuzzy modeling reveals a dynamic self-sustaining network of the GLI transcription factors controlling important metabolic regulators in adult mouse hepatocytes. DOI: 10.1039/C5MB00129C (Paper) Mol. BioSyst., 2015, 11, 2190-2197
+
+[6] Bart O Roep, Mark A Atkinson, Peter M van Endert, Peter A Gottlieb, S.Brian Wilson, Johnny A Sachs, Autoreactive T cell Responses in Insulin-dependent (Type 1) Diabetes Mellitus. Report of the First International Workshop for Standardization of T cell assays, Journal of Autoimmunity, Volume 13, Issue 2, 1999, Pages 267-282, ISSN 0896-8411, https://doi.org/10.1006/jaut.1999.0312.
+
+[7] Shannon P, Markiel A, Ozier O, Baliga NS, Wang JT, Ramage D, Amin N, Schwikowski B, Ideker T. Cytoscape: a software environment for integrated models of biomolecular interaction networks. Genome Res, 13:11 (2498-504). 2003 Nov. PubMed ID: 14597658. Open in PubMed →
+
+[8] Merico D, Isserlin R, Stueker O, Emili A, Bader GD. Enrichment map: a network-based method for gene-set enrichment visualization and interpretation. PLoS One, 5:11 (e13984). 2010 Nov 15. PubMed ID: 21085593.
+
+[9] Reimand J, Isserlin R, Voisin V, Kucera M, Tannus-Lopes C, Rostamianfar A, Wadi L, Meyer M, Wong J, Xu C, Merico D, Bader GD. Pathway enrichment analysis and visualization of omics data using g:Profiler, GSEA, Cytoscape and EnrichmentMap. Nat Protoc, 14:2 (482-517). 2019 Feb. PubMed ID: 30664679. 
+
+[10] Kucera M, Isserlin R, Arkhangorodsky A, Bader GD. AutoAnnotate: A Cytoscape app for summarizing networks with semantic annotations. F1000Res. 2016 Jul 15;5:1717. doi: 10.12688/f1000research.9090.1. PMID: 27830058; PMCID: PMC5082607.
+
+[11] Morris JH, Apeltsin L, Newman AM, Baumbach J, Wittkop T, Su G, Bader GD, Ferrin TE. clusterMaker: a multi-algorithm clustering plugin for Cytoscape. BMC Bioinformatics, 12: (436). 2011 Nov 9. PubMed ID: 22070249.
+
+# Packages used
+
+[1] Wickham H, Hester J, Bryan J (2023). _readr: Read Rectangular Text Data_. R package version 2.1.4,
+  <https://CRAN.R-project.org/package=readr>.
+  
+[2] Yihui Xie (2023). knitr: A General-Purpose Package for Dynamic Report Generation in R. R package version 1.42.
