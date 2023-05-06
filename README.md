@@ -12,7 +12,7 @@ Links to:
 
 * [Assignment 2]()
 
-* [Assignment 3]()
+* [Assignment 3](https://github.com/bcb420-2023/Shauna_Vronces/tree/main/A3)
 
 Shield: [![CC BY 4.0][cc-by-shield]][cc-by]
 
